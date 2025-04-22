@@ -15,8 +15,6 @@
     "twilio": "^5.5.2"
   },
   "devDependencies": {
-    "@types/node": "^22.14.1",
-    "@vercel/node": "^2.3.0",
-    "typescript": "^5.8.3"
+    "@vercel/node": "^2.3.0"
   }
 }
