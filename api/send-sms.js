@@ -1,21 +1,33 @@
 const twilio = require('twilio');
 
-// Initialize Twilio client
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
 
+async function sendSms(to, message) {
+  return await client.messages.create({
+    body: message,
+    to: to,
+    from: process.env.TWILIO_PHONE_NUMBER
+  });
+}
+
 module.exports = async (req, res) => {
-  // Only allow POST requests
+  const clientApiKey = req.headers['x-api-key'];
+  if (clientApiKey !== process.env.API_SECRET_KEY) {
+    return res.status(401).json({ 
+      error: 'Unauthorized',
+      details: 'Invalid or missing API key'
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Extract data from request body
   const { to, message } = req.body;
 
-  // Validate required fields
   if (!to || !message) {
     return res.status(400).json({ 
       error: 'Missing required fields',
@@ -23,7 +35,6 @@ module.exports = async (req, res) => {
     });
   }
 
-  // Validate phone number format
   if (!to.startsWith('+')) {
     return res.status(400).json({ 
       error: 'Invalid phone number format',
@@ -32,14 +43,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Send SMS
-    const sms = await client.messages.create({
-      body: message,
-      to: to,
-      from: process.env.TWILIO_PHONE_NUMBER
-    });
+    const sms = await sendSms(to, message);
 
-    // Return success
     return res.status(200).json({
       success: true,
       message: 'SMS sent successfully',
@@ -47,7 +52,6 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    // Handle errors
     console.error('Twilio error:', error);
     return res.status(500).json({
       error: 'Failed to send SMS',
